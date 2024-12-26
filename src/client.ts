@@ -130,6 +130,101 @@ export class Client {
     }
   }
 
+  async addTags(tagIds: number[]): Promise<APIResponse<ContactData>> {
+    if (!this.contactId) {
+      throw new GroundhoggError("No contact set", "NO_CONTACT_ERROR");
+    }
+
+    try {
+      return await this.request<ContactData>(`/contacts/${this.contactId}/tags`, {
+        method: "POST",
+        body: JSON.stringify({ tag_ids: tagIds }),
+      });
+    } catch (error) {
+      throw new GroundhoggError("Failed to add tags", "ADD_TAGS_ERROR");
+    }
+  }
+
+  async removeTags(tagIds: number[]): Promise<APIResponse<ContactData>> {
+    if (!this.contactId) {
+      throw new GroundhoggError("No contact set", "NO_CONTACT_ERROR");
+    }
+
+    try {
+      return await this.request<ContactData>(`/contacts/${this.contactId}/tags`, {
+        method: "DELETE",
+        body: JSON.stringify({ tag_ids: tagIds }),
+      });
+    } catch (error) {
+      throw new GroundhoggError("Failed to remove tags", "REMOVE_TAGS_ERROR");
+    }
+  }
+
+  async addNote(content: string, type: string = 'note'): Promise<APIResponse<any>> {
+    if (!this.contactId) {
+      throw new GroundhoggError("No contact set", "NO_CONTACT_ERROR");
+    }
+
+    try {
+      return await this.request(`/contacts/${this.contactId}/notes`, {
+        method: "POST",
+        body: JSON.stringify({ content, type }),
+      });
+    } catch (error) {
+      throw new GroundhoggError("Failed to add note", "ADD_NOTE_ERROR");
+    }
+  }
+
+  async getNotes(): Promise<APIResponse<any[]>> {
+    if (!this.contactId) {
+      throw new GroundhoggError("No contact set", "NO_CONTACT_ERROR");
+    }
+
+    try {
+      return await this.request(`/contacts/${this.contactId}/notes`);
+    } catch (error) {
+      throw new GroundhoggError("Failed to get notes", "GET_NOTES_ERROR");
+    }
+  }
+
+  async getContactByEmail(email: string): Promise<APIResponse<ContactData | null>> {
+    try {
+      const response = await this.request<ContactData[]>('/contacts', {
+        method: 'GET',
+        headers: {
+          'X-Search-Email': email,
+        },
+      });
+
+      if (response.success && response.data && response.data.length > 0) {
+        return { success: true, data: response.data[0] };
+      }
+
+      return { success: true, data: null };
+    } catch (error) {
+      throw new GroundhoggError("Failed to get contact by email", "GET_CONTACT_BY_EMAIL_ERROR");
+    }
+  }
+
+  async getContactByPhone(phone: string): Promise<APIResponse<ContactData | null>> {
+    try {
+      const response = await this.request<ContactData[]>('/contacts', {
+        method: 'GET',
+        headers: {
+          'X-Search-Phone': phone,
+        },
+      });
+
+      if (response.success && response.data && response.data.length > 0) {
+        return { success: true, data: response.data[0] };
+      }
+
+      return { success: true, data: null };
+    } catch (error) {
+      throw new GroundhoggError("Failed to get contact by phone", "GET_CONTACT_BY_PHONE_ERROR");
+    }
+  }
+
   private async request<T>(
     path: string,
     options: RequestInit = {},
