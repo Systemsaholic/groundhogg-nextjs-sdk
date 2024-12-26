@@ -75,4 +75,4 @@ bun run dev
 
 ## License
 
-MIT 
+MIT # Groundhogg Next.js SDK Improvements
