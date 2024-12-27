@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 /**
  * Configuration options for the Groundhogg SDK
  */
@@ -50,18 +52,12 @@ export interface TrackingEvent {
  * Contact data structure
  */
 export interface ContactData {
-  /** Contact's email address */
-  email?: string;
-  /** Contact's first name */
+  id: number;
+  email: string;
   firstName?: string;
-  /** Contact's last name */
   lastName?: string;
-  /** Contact's phone number */
   phone?: string;
-  /** Contact's tags */
   tags?: string[];
-  /** Any additional contact fields */
-  [key: string]: unknown;
 }
 
 /**
@@ -69,6 +65,23 @@ export interface ContactData {
  */
 export interface APIResponse<T> {
   success: boolean;
-  data?: T;
-  error?: string;
+  data: T | null;
+  message?: string;
+}
+
+export interface ProviderProps {
+  children: ReactNode;
+}
+
+export interface Client {
+  getContact(id: number): Promise<APIResponse<ContactData>>;
+  listContacts(): Promise<APIResponse<ContactData[]>>;
+  setContact(id: number): void;
+  updateContact(data: Partial<ContactData>): Promise<APIResponse<ContactData>>;
+}
+
+export interface Tracker {
+  setContact(id: number): void;
+  trackEvent(event: string, data?: Record<string, unknown>): void;
+  trackPageView(url?: string): void;
 }

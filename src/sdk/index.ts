@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
-import * as React from "react";
 import { Client } from "../client";
 import { Tracker } from "../tracking";
-import { GroundhoggContext } from "../hooks";
 import type { SDKConfig } from "../types";
 
 export class GroundhoggSDK {
@@ -16,19 +14,9 @@ export class GroundhoggSDK {
     this.client = new Client(this.apiEndpoint, config.clientOptions);
   }
 
-  // Initialize with contact
-  setContact(contactId: number) {
+  setContact(contactId: number): this {
     this.tracker.setContact(contactId);
     this.client.setContact(contactId);
     return this;
   }
-
-  // React hooks provider
-  Provider = ({ children }: { children: ReactNode }) => {
-    return React.createElement(
-      GroundhoggContext.Provider,
-      { value: this },
-      children,
-    );
-  };
 }

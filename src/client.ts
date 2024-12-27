@@ -124,7 +124,14 @@ export class Client {
     if (!this.contactId) return { success: true, data: null };
 
     try {
-      return await this.request<ContactData>(`/contacts/${this.contactId}`);
+      const response = await this.request<ContactData>(
+        `/contacts/${this.contactId}`,
+      );
+      return {
+        success: response.success,
+        data: response.data ?? null,
+        message: response.message,
+      };
     } catch (error) {
       throw new GroundhoggError("Failed to fetch contact", "GET_CONTACT_ERROR");
     }
@@ -196,11 +203,11 @@ export class Client {
         },
       });
 
-      if (response.success && response.data && response.data.length > 0) {
-        return { success: true, data: response.data[0] };
-      }
-
-      return { success: true, data: null };
+      return {
+        success: response.success,
+        data: response.data?.[0] ?? null,
+        message: response.message,
+      };
     } catch (error) {
       throw new GroundhoggError("Failed to get contact by email", "GET_CONTACT_BY_EMAIL_ERROR");
     }
@@ -215,11 +222,11 @@ export class Client {
         },
       });
 
-      if (response.success && response.data && response.data.length > 0) {
-        return { success: true, data: response.data[0] };
-      }
-
-      return { success: true, data: null };
+      return {
+        success: response.success,
+        data: response.data?.[0] ?? null,
+        message: response.message,
+      };
     } catch (error) {
       throw new GroundhoggError("Failed to get contact by phone", "GET_CONTACT_BY_PHONE_ERROR");
     }
@@ -248,20 +255,19 @@ export class Client {
         throw new GroundhoggError(
           data.message || "API request failed",
           data.code || "API_ERROR",
-          response.status,
         );
       }
 
       return {
         success: true,
-        data: data as T,
+        data: data.data ?? null,
+        message: data.message,
       };
     } catch (error) {
-      if (error instanceof GroundhoggError) {
-        throw error;
-      }
-
-      throw new GroundhoggError("Network request failed", "NETWORK_ERROR");
+      throw new GroundhoggError(
+        error instanceof Error ? error.message : "Request failed",
+        "REQUEST_ERROR",
+      );
     }
   }
 }

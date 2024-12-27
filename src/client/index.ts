@@ -25,51 +25,46 @@ export class Client {
     this.listenForContactUpdates();
   }
 
-  private restoreContact() {
-    try {
-      const storedId = localStorage.getItem(this.storageKey);
-      if (storedId) {
-        const id = parseInt(storedId, 10);
-        if (!isNaN(id)) {
-          this.contactId = id;
-        }
-      }
-    } catch (e) {
-      this.logError("Failed to restore contact:", e);
-    }
-  }
-
-  private listenForContactUpdates() {
-    window.addEventListener("storage", (event) => {
-      if (event.key === this.storageKey && event.newValue) {
-        const id = parseInt(event.newValue, 10);
-        if (!isNaN(id)) {
-          this.contactId = id;
-        }
-      }
-    });
-  }
-
-  private logError(message: string, error: unknown) {
-    if (this.options.debug) {
-      console.error(message, error);
-    }
-  }
-
-  private logDebug(...args: unknown[]) {
-    if (this.options.debug) {
-      console.log(...args);
-    }
-  }
-
-  setContact(contactId: number) {
+  setContact(contactId: number): void {
     this.contactId = contactId;
     try {
       localStorage.setItem(this.storageKey, contactId.toString());
     } catch (e) {
       this.logError("Failed to store contact:", e);
     }
-    return this;
+  }
+
+  async getContact(): Promise<APIResponse<ContactData | null>> {
+    if (!this.contactId) return { success: true, data: null };
+
+    try {
+      const response = await this.request<ContactData>(
+        `/contacts/${this.contactId}`,
+      );
+      return {
+        success: response.success,
+        data: response.data ?? null,
+        message: response.message,
+      };
+    } catch (error) {
+      throw new GroundhoggError("Failed to fetch contact", "GET_CONTACT_ERROR");
+    }
+  }
+
+  async listContacts(): Promise<APIResponse<ContactData[]>> {
+    try {
+      const response = await this.request<ContactData[]>("/contacts");
+      return {
+        success: response.success,
+        data: response.data ?? [],
+        message: response.message,
+      };
+    } catch (error) {
+      throw new GroundhoggError(
+        "Failed to list contacts",
+        "LIST_CONTACTS_ERROR",
+      );
+    }
   }
 
   async createContact(data: ContactData): Promise<APIResponse<ContactData>> {
@@ -112,16 +107,6 @@ export class Client {
     }
   }
 
-  async getContact(): Promise<APIResponse<ContactData | null>> {
-    if (!this.contactId) return { success: true, data: null };
-
-    try {
-      return await this.request<ContactData>(`/contacts/${this.contactId}`);
-    } catch (error) {
-      throw new GroundhoggError("Failed to fetch contact", "GET_CONTACT_ERROR");
-    }
-  }
-
   private async request<T>(
     path: string,
     options: RequestInit = {},
@@ -152,13 +137,48 @@ export class Client {
       return {
         success: true,
         data: data as T,
+        message: data.message,
       };
     } catch (error) {
-      if (error instanceof GroundhoggError) {
-        throw error;
-      }
-
-      throw new GroundhoggError("Network request failed", "NETWORK_ERROR");
+      throw new GroundhoggError(
+        error instanceof Error ? error.message : "Request failed",
+        "REQUEST_ERROR",
+      );
     }
+  }
+
+  private logDebug(...args: unknown[]) {
+    if (this.options.debug) {
+      console.debug("[Groundhogg Client]", ...args);
+    }
+  }
+
+  private logError(...args: unknown[]) {
+    console.error("[Groundhogg Client]", ...args);
+  }
+
+  private restoreContact() {
+    try {
+      const storedId = localStorage.getItem(this.storageKey);
+      if (storedId) {
+        const id = parseInt(storedId, 10);
+        if (!isNaN(id)) {
+          this.contactId = id;
+        }
+      }
+    } catch (e) {
+      this.logError("Failed to restore contact:", e);
+    }
+  }
+
+  private listenForContactUpdates() {
+    window.addEventListener("storage", (event) => {
+      if (event.key === this.storageKey && event.newValue) {
+        const id = parseInt(event.newValue, 10);
+        if (!isNaN(id)) {
+          this.contactId = id;
+        }
+      }
+    });
   }
 }
